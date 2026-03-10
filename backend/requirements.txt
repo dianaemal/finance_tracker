@@ -1,0 +1,7 @@
+fastapi==0.101.1        # FastAPI framework
+uvicorn==0.23.2         # ASGI server to run FastAPI
+sqlalchemy==2.0.20      # ORM for database models
+pydantic==2.6.2         # Data validation / schemas
+databases==0.7.4        # Optional if using async DB connections
+python-dotenv==1.0.1    # Optional, for environment variables
+pydantic_settings
