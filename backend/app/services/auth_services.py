@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
-
+import pytz
 from app.models.user import User
 from app.models.refresh_token import RefreshToken
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, LogoutRequest
 from app.schemas.user import UserResponse
 from app.core.security import (
     hash_password,
@@ -40,7 +40,9 @@ def register_user(user: RegisterRequest, db : Session):
     # create user with hashed password
     db_user = User(
         email= user.email,
-        hashed_password = hash_password(user.password)
+        hashed_password = hash_password(user.password),
+        username= user.username,
+        profile = user.profile
     )
 
     db.add(db_user)
@@ -50,7 +52,7 @@ def register_user(user: RegisterRequest, db : Session):
     return db_user
 
 
-def authenticate_user(db : Session, data: LoginRequest):
+def authenticate_user(data: LoginRequest, db : Session):
 
     """
     Authenticate user.
@@ -66,56 +68,98 @@ def authenticate_user(db : Session, data: LoginRequest):
     # check if the email exits:
 
     user = db.query(User).filter(User.email == data.email).first()
-    if not user_email or not verify_password(data.password, user.hashed_password):
+    if not user or not verify_password(data.password, user.hashed_password):
         return None
         
     return user
 
-def create_tokens(db: Session, user: User):
+def save_token(db: Session, user_id: int, refresh_token: str, expire: datetime):
 
-    expire = datetime.now(timezone.utc) + timedelta(days = settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    access_token = create_access_token(data={"sub": user.email})
-    refresh_token = create_refresh_token(data={"sub": user.email}, expire)
-
-    # hash th erefresh token using hashlib before storing it in db
     token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
 
-    refersh_token = RefreashToken(
-        user_id = user.id,
-        hash_token = token_hash,
-        expires_at = expire
-
+    refresh_token_db = RefreshToken(
+        user_id=user_id,
+        hash_token=token_hash,
+        expires_at=expire
     )
-    db.add(refresh_token)
+
+    db.add(refresh_token_db)
     db.commit()
+
+    return refresh_token_db
+
+
+def create_tokens(user: User, db: Session):
+
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
+
+    access_token = create_access_token(
+        data={"sub": str(user.id)}
+    )
+
+    refresh_token = create_refresh_token(
+        data={"sub": str(user.id)},
+        expire=expire
+    )
+
+    save_token(db, user.id, refresh_token, expire)
 
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token
     )
 
+def refresh_access_token(refresh_token: str, db: Session):
 
-def refresh_access_token(db : Session, refersh_token: str):
-
-    # hash the refresh token to compare to db
     hashed = hashlib.sha256(refresh_token.encode()).hexdigest()
 
-    r_token = db.query(RefreashToken).filter(RefreashToken.hash_token == hashed).first()
+    r_token = db.query(RefreshToken).filter(
+        RefreshToken.hash_token == hashed
+    ).first()
 
     if not r_token:
-        raise ValueError("Invalid refresh token.")
-    
-    if r_token.expires_at < datetime.utcnow():
+        raise ValueError("Invalid refresh token")
 
-        
+    if r_token.expires_at.replace(tzinfo=pytz.utc) < datetime.now(timezone.utc):
+        db.delete(r_token)
+        db.commit()
+        raise ValueError("Refresh token expired")
 
-    
+    user_id = r_token.user_id
 
+    # token rotation
+    db.delete(r_token)
+    db.commit()
 
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
 
+    new_refresh_token = create_refresh_token(
+        data={"sub": str(user_id)},
+        expire=expire
+    )
 
+    save_token(db, user_id, new_refresh_token, expire)
 
+    access_token = create_access_token(
+        data={"sub": str(user_id)}
+    )
 
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=new_refresh_token
+    )
 
+def logout_user(refresh_token: str, db: Session):
+    token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
 
+    token_record = db.query(RefreshToken).filter(
+        RefreshToken.hash_token == token_hash
+    ).first()
 
+    if token_record:
+        db.delete(token_record)
+        db.commit()

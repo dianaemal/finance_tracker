@@ -1,5 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from app.db.base import Base
+from datetime import datetime, timedelta
+from app.db.base_class import Base
+from sqlalchemy.orm import relationship
+from app.models.refresh_token import RefreshToken
 
 class User(Base):
     """
@@ -16,7 +19,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key = True, index = True)
-    email = Column(String(255), Unique = True, index = True, nullable = False)
+    email = Column(String(255), unique = True, index = True, nullable = False)
     username = Column(String(300), index = True, nullable = False)
     hashed_password = Column(String(255), nullable = False)
     profile = Column(String)
@@ -26,7 +29,7 @@ class User(Base):
     # Relationship: User -> RefreashToken (one-to-many)
     # back_populates links to the 'user' attribute on Task
     #cascade: delete all the refersh tokens when the parent (user) instance gets deleted.
-    r_tokens = Relationship(RefreshToken, back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship(RefreshToken, back_populates="user", cascade="all, delete-orphan")
 
 
     def __repr__(self):

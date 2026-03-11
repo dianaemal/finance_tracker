@@ -2,14 +2,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
-class Settings:
+class Settings(BaseSettings):
 
     #APP Settings
     APP_NAME: str = "Personal Finance Tracker App"
     DEBUG : bool = True
 
     # Detabase
-    DETABASE_URL: str 
+    DATABASE_URL: str
 
     #Security
     SECRET_KEY : str
@@ -17,7 +17,7 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 1
     # when deploting, add the production url
-    BACKEND_CORS_ORIGIN : List[str] = [ "http://localhost:5173"]
+    BACKEND_CORS_ORIGIN : list[str] = [ "http://localhost:5173"]
 
     # read environment variables from .env file
     model_config = SettingsConfigDict(env_file=".env")
@@ -28,4 +28,4 @@ def get_settings():
     return Settings()
 
 settings = get_settings()
-
+print(settings)
