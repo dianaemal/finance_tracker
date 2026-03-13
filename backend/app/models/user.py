@@ -27,9 +27,22 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default = datetime.utcnow)
 
     # Relationship: User -> RefreashToken (one-to-many)
-    # back_populates links to the 'user' attribute on Task
+    # back_populates: links to the 'user' attribute on RefreshTokens
     #cascade: delete all the refersh tokens when the parent (user) instance gets deleted.
-    refresh_tokens = relationship(RefreshToken, back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+     # Relationship: User -> Category (one-to-many)
+    categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+
+    # Relationship: User -> Budget (one-to-many)
+    budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan" )
+
+    # Relationship: User -> Transaction (one-to-many)
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan" )
+
+    # Relationship: User -> Account (one-to-many)
+    accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan" )
+
+
 
 
     def __repr__(self):
