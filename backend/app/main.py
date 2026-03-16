@@ -4,7 +4,9 @@ from app.db.session import engine
 from app.db.base import Base
 from app.api.routes import account
 from app.api.routes import user
-
+from app.api.routes import category
+from app.api.routes import budget 
+from app.api.routes import transaction
 app = FastAPI()
 
 # create database tables
@@ -13,3 +15,6 @@ Base.metadata.create_all(bind=engine)
 app.include_router(auth.router)
 app.include_router(account.router)
 app.include_router(user.router)
+app.include_router(category.router)
+app.include_router(budget.router)
+app.include_router(transaction.router)

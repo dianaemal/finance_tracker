@@ -5,10 +5,29 @@ from app.schemas.account import AccountResponse, AccountCreate, AccountUpdate
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
 
+
+def get_account_service(
+    account_id: int,
+    current_user: int,
+    db: Session
+):
+    """
+    Get a specific account (if owned by current user).
+    Note the double filter: by account_id AND user_id.
+    """
+    account = db.query(Account).filter(
+        Account.user_id == current_user,
+        Account.id == account_id
+    ).first()
+
+    if account is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return account
+
 def create_account_service(
     account: AccountCreate,
-    db: Session,
-    current_user: int
+    current_user: int,
+    db: Session
 ): 
     """
     Create a new account for the authenticated user.
@@ -27,9 +46,9 @@ def create_account_service(
     return db_account
 
 
-def list_accounts_service(
-    db: Session,
-    current_user: int
+def list_accounts(
+    current_user: int,
+    db: Session
 ):
     """
     List all accounts for the authenticated user.
@@ -39,42 +58,20 @@ def list_accounts_service(
     accounts = db.query(Account).filter(Account.user_id == current_user).all()
     return accounts
 
-def get_account_service(
-    account_id: int,
-    db: Session,
-    current_user: int
-):
-    """
-    Get a specific account (if owned by current user).
-    Note the double filter: by account_id AND user_id.
-    """
-    account = db.query(Account).filter(
-        Account.user_id == current_user,
-        Account.id == account_id
-    ).first()
 
-    if account is None:
-        raise HTTPException(status_code=404, detail="Account not found")
-    return account
 
 def update_account_service(
     account_id: int,
-    db: Session,
-    account_update: AccountUpdate,
-    current_user: int
+    data: AccountUpdate,
+    current_user: int,
+    db: Session
 ):
     """
     Update an account (if owned by current user).
     """
-    account = db.query(Account).filter(
-        Account.user_id == current_user,
-        Account.id == account_id
-    ).first()
+    account = get_account_service(account_id, current_user, db)
 
-    if account is None:
-        raise HTTPException(status_code=404, detail="Account not found")
-
-    update_data = account_update.model_dump(exclude_unset=True)
+    update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(account, field, value)
 
@@ -85,21 +82,15 @@ def update_account_service(
 
 def delete_account_service(
     account_id: int,
-    db: Session,
-    current_user: int
+    current_user: int,
+    db: Session
 ):
     """
     Delete an account (if owned by current user).
     """
 
 
-    account = db.query(Account).filter(
-        Account.user_id == current_user,
-        Account.id == account_id
-    ).first()
-
-    if account is None:
-        raise HTTPException(status_code=404, detail="Account not found")
+    account = get_account_service(account_id, current_user, db)
 
     db.delete(account)
     db.commit()

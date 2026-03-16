@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
-from app.schemas.category import Category
+from app.schemas.category import CategoryResponse
 class BudgetBase(BaseModel):
 
     category_id: Optional[int] = None
-    month = int
-    year = int
-    ammount = float
+    month: int
+    year: int
+    ammount: float
 
 class BudgetCreate(BudgetBase):
     """Schema for creating a new budget."""
@@ -16,11 +16,11 @@ class BudgetCreate(BudgetBase):
 class BudgetUpdate(BaseModel):
     """Schema for updating an existing budget."""
     category_id: Optional[int] = None
-    month = Optional[int] = None
-    year = Optional[int] = None
-    ammount = Optional[float] = None
+    month: Optional[int] = None
+    year: Optional[int] = None
+    ammount: Optional[float] = None
 
-class Budget(BudgetBase):
+class BudgetResponse(BudgetBase):
     """
     Schema for budget responses.
 
@@ -28,7 +28,9 @@ class Budget(BudgetBase):
     """
     model_config = ConfigDict(from_attributes=True)
     id: int
-    category: Category
+    category: CategoryResponse
+
+
 
 
 

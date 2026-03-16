@@ -1,34 +1,42 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
-from app.schemas.category import Category
+from app.schemas.category import CategoryResponse
+from app.schemas.account import AccountResponse
+
 class TransactionBase(BaseModel):
 
-    category_id: Optional[int] = None
-    month = int
-    year = int
-    ammount = float
+    category_id: int
+    aacount_id: int
+    type: str
+    ammount: int
+    date: datetime
+    description: Optional[str] = None
+
 
 class TransactionCreate(TransactionBase):
-    """Schema for creating a new budget."""
+    """Schema for creating a new transactiont."""
     pass
 
 class TransactionUpdate(BaseModel):
-    """Schema for updating an existing budget."""
+    """Schema for updating an existing transaction."""
     category_id: Optional[int] = None
-    month = Optional[int] = None
-    year = Optional[int] = None
-    ammount = Optional[float] = None
+    aacount_id: Optional[int] = None
+    type: Optional[str] = None
+    ammount: Optional[int] = None
+    date: Optional[datetime] = None
+    description: Optional[str] = None
 
-class Transaction(TransactionBase):
+class TransactionResponse(TransactionBase):
     """
-    Schema for budget responses.
+    Schema for transaction responses.
 
     model_config enables reading from SQLAlchemy model instances.
     """
     model_config = ConfigDict(from_attributes=True)
     id: int
-    category: Category
+    category: CategoryResponse
+    account: AccountResponse
 
 
 

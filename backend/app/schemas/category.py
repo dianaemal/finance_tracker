@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 
-class CategoryBase(BaseModel): 
+class CategoryBase(BaseModel):
     name: str
 
 class CategoryCreate(CategoryBase):
@@ -13,8 +13,8 @@ class CategoryUpdate(BaseModel):
     """Schema for updating an existing category"""
     name: Optional[str] = None
 
-class Category(CategoryBase):
-     """
+class CategoryResponse(CategoryBase):
+    """
     Schema for category responses.
     model_config enables reading from SQLAlchemy model instances.
     """
