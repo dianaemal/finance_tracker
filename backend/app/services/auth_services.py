@@ -72,6 +72,17 @@ def authenticate_user(data: LoginRequest, db : Session):
         return None
         
     return user
+def authenticate_user_swagger(email: str, password: str, db : Session):
+
+   
+
+    # check if the email exits:
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not verify_password(password, user.hashed_password):
+        return None
+        
+    return user
 
 def save_token(db: Session, user_id: int, refresh_token: str, expire: datetime):
 

@@ -15,14 +15,14 @@ class AccountUpdate(BaseModel):
     name: Optional[str] = None
     balance: Optional[float] = None
 
-class Account(AccountBase):
-     """
+class AccountResponse(AccountBase):
+    model_config = ConfigDict(from_attributes=True)
+    """
     Schema for account responses.
 
     Now includes user_id to show account ownership.
-    model_config enables reading from SQLAlchemy model instances.
+    model_config enables reading from the database
     """
-    model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
     user_id: int
