@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth
 from app.db.session import engine
 from app.db.base import Base
@@ -9,8 +10,15 @@ from app.api.routes import budget
 from app.api.routes import transaction
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # your frontend
+    allow_credentials=True,  # 🍪 REQUIRED for cookies
+    allow_methods=["*"],     # allow POST, GET, OPTIONS
+    allow_headers=["*"],
+)
 # create database tables
-Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
 
 app.include_router(auth.router)
 app.include_router(account.router)

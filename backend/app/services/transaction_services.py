@@ -27,8 +27,8 @@ def create_transaction_service(
     db_transaction = Transaction(
         user_id = current_user,
         category_id = data.category_id,
-        aacount_id = data.aacount_id,
-        ammount= data.ammount,
+        account_id = data.account_id,
+        amount= data.amount,
         type = data.type,
         date = data.date,
         description = data.description

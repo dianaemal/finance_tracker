@@ -30,7 +30,7 @@ def create_budget_service(
         category_id = data.category_id,
         month = data.month,
         year = data.year,
-        ammount = data.ammount
+        amount = data.amount
     )
 
     db.add(db_budget)

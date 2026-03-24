@@ -13,7 +13,7 @@ class Budget(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable = True)
     month = Column(Integer, nullable=False)
     year = Column(Integer, nullable=False)
-    ammount = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
 
     #Relationship: Budget -> User (many-to-one)
     user = relationship("User", back_populates="budgets")

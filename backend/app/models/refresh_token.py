@@ -9,12 +9,13 @@ class RefreshToken(Base):
     Each token belongs to exactly one user.
     
     """
-     __tablename__ = "refersh_tokens"
+     __tablename__ = "refresh_tokens"
      id = Column(Integer, primary_key = True, index=True)
      #Foreign key: links to users.id
      user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
      hash_token = Column(String, nullable=False)
      expires_at = Column(DateTime(timezone=True), nullable=False)
+     session_start = Column(DateTime(timezone=True), nullable=False)
      created_at = Column(DateTime, default=datetime.utcnow)
 
     #Relationship: RefreshToken -> User (many-to-one)

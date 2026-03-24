@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     #Security
     SECRET_KEY : str
     ALGORITHM : str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 1
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 5
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 10
     # when deploting, add the production url
     BACKEND_CORS_ORIGIN : list[str] = [ "http://localhost:5173"]
 

@@ -8,7 +8,6 @@ class Account(Base):
     account table specifies the type of account (checking, saving, credit, etc)
 
     """
-    __allow_unmapped__ = True
     __tablename__ = "accounts"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)

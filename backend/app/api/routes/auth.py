@@ -1,26 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db.session import get_db
 from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, LogoutRequest
 from app.services import auth_services
+from app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post("/register", response_model=UserResponse, status_code=201)
 def register_user(data: RegisterRequest, db: Session = Depends(get_db)):
 
     try:
         user = auth_services.register_user(data, db)
-        tokens = auth_services.create_tokens(user, db)
-        return tokens
+        
+        return user
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
 
    
@@ -31,16 +33,57 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
             )
-    return auth_services.create_tokens(user, db)
+    tokens =  auth_services.create_tokens(user, db)
+    response = JSONResponse(content={"message": "Login successful"})
+    response.set_cookie(
+        key="access_token",
+        value=tokens.access_token,
+        httponly=True,
+        secure=False,      # True in production
+        samesite="lax",
+        max_age=30 * 6
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=tokens.refresh_token,
+        httponly=True,
+        secure=False,     
+        samesite="lax",
+        
+    )
+    return response
 
 
 
 
-@router.post("/refresh", response_model=TokenResponse)
-def refersh(data: RefreshRequest, db: Session = Depends(get_db)):
 
+@router.post("/refresh")
+def refersh(request: Request, db: Session = Depends(get_db)):
+
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refersh token.")
     try:
-        return auth_services.refresh_access_token(data.refresh_token, db)
+        tokens = auth_services.refresh_access_token(refresh_token, db)
+        response = JSONResponse(content={"message": "refreshed"})
+        response.set_cookie(
+            key="access_token",
+            value=tokens.access_token,
+            httponly=True,
+            secure=False,      # True in production
+            samesite="lax",
+            max_age=30 * 6
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens.refresh_token,
+            httponly=True,
+            secure=False,     
+            samesite="lax",
+            
+        )
+        return response
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,7 +95,12 @@ def refersh(data: RefreshRequest, db: Session = Depends(get_db)):
 def logout(data: LogoutRequest, db: Session = Depends(get_db)):
 
     auth_services.logout_user(data.refresh_token, db)
-    return {"message": "Logged out successfully."}
+    """Log out by clearing the access_token cookie."""
+    response = JSONResponse(
+        content={"message": "Logged out successfully"})
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
+    return response
 
 
 

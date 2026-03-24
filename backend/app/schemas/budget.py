@@ -7,7 +7,7 @@ class BudgetBase(BaseModel):
     category_id: Optional[int] = None
     month: int
     year: int
-    ammount: float
+    amount: float
 
 class BudgetCreate(BudgetBase):
     """Schema for creating a new budget."""
@@ -18,7 +18,7 @@ class BudgetUpdate(BaseModel):
     category_id: Optional[int] = None
     month: Optional[int] = None
     year: Optional[int] = None
-    ammount: Optional[float] = None
+    amount: Optional[float] = None
 
 class BudgetResponse(BudgetBase):
     """
