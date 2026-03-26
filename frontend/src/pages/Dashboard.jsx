@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-
+import Sidebar from "../components/Sidebar";
 export default function Dashboard() {
   const [data, setData] = useState(null);
 
@@ -19,9 +19,12 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div>
+    <div style={{display:"flex"}}>
+      <Sidebar/>
+      <div>
       <h2>Dashboard</h2>
       <pre>{JSON.stringify(data, null, 2)}</pre>
+      </div>
     </div>
   );
 }

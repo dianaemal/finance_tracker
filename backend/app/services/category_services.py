@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from app.models.category import Category
+from sqlalchemy import func, or_
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
@@ -24,9 +25,19 @@ def create_category_service(
     current_user: int,
     db: Session
 ):
+    name = data.name.strip()
+    # check if the category exits:
+    category = db.query(Category).filter(
+        func.lower(Category.name) == name.lower()
+    ).filter(
+        or_(Category.user_id == current_user, Category.user_id == None)
+    ).first()
+    if category not None:
+        return category
+
     db_category = Category(
         user_id = current_user,
-        name = data.name
+        name = name
     )
 
     db.add(db_category)
@@ -54,7 +65,10 @@ def list_categories(
 ):
 
     categories = db.query(Category).filter(
-        Category.user_id == current_user,
+        or_(
+            Category.user_id == current_user,
+            Category.user_id == None
+        )     
     ).all()
     return categories
 
