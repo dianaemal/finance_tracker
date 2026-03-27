@@ -25,6 +25,20 @@ def create_budget_service(
     current_user: int,
     db: Session
 ):
+    # see if a budget with the same month, year and category exists
+    budget = db.query(Budget).filter(
+        Budget.user_id == current_user,
+        Budget.category_id == data.category_id,
+        Budget.month == data.month,
+        Budget.year == data.year
+    ).first()
+    if budget is not None:
+        budget.amount = data.amount
+        db.commit()
+        db.refresh(budget)
+        return budget
+
+
     db_budget = Budget(
         user_id = current_user,
         category_id = data.category_id,
@@ -57,15 +71,20 @@ def update_budget_service(
 
 def list_budgets(
     current_user: int,
-    db: Session
+    db: Session,
+    month: int | None = None,
+    year: int | None = None
+   
 ):
 
-    budgets = (
-        db.query(Budget)
-        .filter(Budget.user_id == current_user)
-        .all()
-    )
-    return budgets
+    budgets = db.query(Budget).filter(Budget.user_id == current_user)
+    if month is not None:
+        budgets = budgets.filter(Budget.month == month)
+    if year is not None:
+        budgets = budgets.filter(Budget.year == year)
+        
+    
+    return budgets.all()
 
 def delete_budget_service(
     budget_id: int,

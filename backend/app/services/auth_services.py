@@ -106,7 +106,7 @@ def save_token(db: Session, user_id: int, refresh_token: str, expire: datetime, 
 def create_tokens(user: User, db: Session):
 
     expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
     # start of the session will be set to the login time:
     now = datetime.now(timezone.utc)
@@ -143,10 +143,10 @@ def refresh_access_token(refresh_token: str, db: Session):
     if not r_token:
         raise ValueError("Invalid refresh token")
     # after 7 days, the session should end and refersh token will be deleted
-    MAX_SESSION_DAYS = 5
+    MAX_SESSION_DAYS = 7
     print( r_token.session_start.replace(tzinfo=pytz.utc))
     print(datetime.now(timezone.utc) - timedelta(minutes=MAX_SESSION_DAYS))
-    if r_token.session_start.replace(tzinfo=pytz.utc) < datetime.now(timezone.utc) - timedelta(minutes=MAX_SESSION_DAYS):
+    if r_token.session_start.replace(tzinfo=pytz.utc) < datetime.now(timezone.utc) - timedelta(days=MAX_SESSION_DAYS):
         db.delete(r_token)
         db.commit()
         raise ValueError("Refresh token expired")
@@ -159,7 +159,7 @@ def refresh_access_token(refresh_token: str, db: Session):
     db.commit()
 
     expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
 
     new_refresh_token = create_refresh_token(

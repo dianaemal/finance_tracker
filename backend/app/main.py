@@ -8,7 +8,17 @@ from app.api.routes import user
 from app.api.routes import category
 from app.api.routes import budget 
 from app.api.routes import transaction
+from app.services.category_services import seed_categories
+from app.db.session import SessionLocal
 app = FastAPI()
+
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        seed_categories(db)
+    finally:
+        db.close()
 
 app.add_middleware(
     CORSMiddleware,

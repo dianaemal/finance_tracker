@@ -32,7 +32,7 @@ def create_category_service(
     ).filter(
         or_(Category.user_id == current_user, Category.user_id == None)
     ).first()
-    if category not None:
+    if category is not None:
         return category
 
     db_category = Category(
@@ -85,4 +85,17 @@ def delete_category_service(
 
 
     
+# function for adding predefined categories to the database
+def seed_categories(db):
+    predefined = ["Food", "Rent", "Transport", "Entertainment", "Personal", "Insurance", "Health"]
 
+    for name in predefined:
+        exists = db.query(Category).filter(
+            func.lower(Category.name) == name.lower(),
+            Category.user_id == None
+        ).first()
+
+        if not exists:
+            db.add(Category(name=name, user_id=None))
+
+    db.commit()

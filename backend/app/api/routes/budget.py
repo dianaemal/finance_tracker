@@ -26,10 +26,12 @@ def create_budget(
 @router.get("/", response_model=list[BudgetResponse])
 def get_all_budgets(
     current_user: User = Depends(get_current_active_user),
+    month: int | None = None,
+    year: int | None = None,
     db: Session = Depends(get_db)
 ):
 
-    return list_budgets(current_user.id, db)
+    return list_budgets(current_user.id, db, month, year)
 
 @router.get("/{budget_id}", response_model=BudgetResponse)
 def get_category(
