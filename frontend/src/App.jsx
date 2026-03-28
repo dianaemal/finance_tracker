@@ -4,14 +4,18 @@ import Budget from './pages/Budget';
 import Register from "./pages/Register";
 import LogIn from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Accounts from './pages/Account';
+import Transaction from './pages/Transaction';
 export default function App (){
   return (
  
       <Routes>
           <Route path="/register" element={<Register />} />
-           <Route path="/login" element={<LogIn />} />
-           <Route path="/dashboard" element={<Dashboard/>}/>
-            <Route path="/budget" element={<Budget/>}/>
+          <Route path="/login" element={<LogIn />} />
+          <Route path="/dashboard" element={<Dashboard/>}/>
+          <Route path="/budget" element={<Budget/>}/>
+          <Route path="/account" element={<Accounts/>}/>
+          <Route path="/transaction" element={<Transaction/>}/>
 
           
       </Routes>

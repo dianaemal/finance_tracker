@@ -9,7 +9,7 @@ class TransactionBase(BaseModel):
     category_id: int
     account_id: int
     type: str
-    amount: int
+    amount: float
     date: datetime
     description: Optional[str] = None
 
@@ -23,7 +23,7 @@ class TransactionUpdate(BaseModel):
     category_id: Optional[int] = None
     account_id: Optional[int] = None
     type: Optional[str] = None
-    amount: Optional[int] = None
+    amount: Optional[float] = None
     date: Optional[datetime] = None
     description: Optional[str] = None
 

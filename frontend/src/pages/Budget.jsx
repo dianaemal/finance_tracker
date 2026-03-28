@@ -21,8 +21,12 @@ export default function Budget(){
         amount: null
     })
     const [budget, setBudget] = useState(budgetObject)
-   
- 
+    const [mode, setMode] = useState("create")
+    const [editBudget, setEdit] = useState({
+        id: null,
+        amount: ""
+    })
+
 
     //const [selectedCategory, setSelectedCategory] = useState()
     console.log(budget)
@@ -150,7 +154,62 @@ export default function Budget(){
     const past =  viewYear < currentYear ||
                         (viewYear === currentYear && viewMonth < currentMonth);
 
-    
+    const handleEdit = (budget)=>{
+        setMode("edit")
+   
+        setEdit({
+            id: budget.id,
+            amount: budget.amount
+        })
+
+       
+        setShowModal(true)
+    }
+
+    const handleSubmitEdit = async ()=>{
+        if (editBudget.id){
+         
+            try{
+                const response = await api.put(`/budgets/${editBudget.id}`, {
+                amount: editBudget.amount
+            })
+            if (response.status === 201 || response.status === 200){
+                console.log(response.data)
+                fetchBudget(viewMonth, viewYear)
+                setShowModal(false)
+
+              
+                
+            }
+            }catch(err){
+                console.log(err)
+            }
+            
+
+
+        }
+
+       
+    }
+
+    const handleDelete = (id) =>{
+        if (window.confirm('Are you sure you want to delete this budget?')) {
+            try{
+                api.delete(`/budgets/${id}`)
+                .then((res)=>{
+                    if (res.status === 200 || res.status === 204){
+                        setBudgetList((prev)=>{
+                            return prev.filter((b)=> b.id !== id)
+        
+                        })
+                    }
+                })
+            } catch (error) {
+                console.error("Error deleting work experience:", error);
+            }
+        }
+    }
+   
 
     return(
         
@@ -162,7 +221,7 @@ export default function Budget(){
       <h4>Create Budget</h4>
       <form onSubmit={handleSubmit}>
       <div class="form-group">
-        <select name="category_id" value={budget.category_id || ""} onChange={handleChange}>
+        <select name="category_id" value={budget.category_id || editBudget.amount || ""} onChange={handleChange}>
             <option value="">Select category</option>
             {categories.map((cat)=>(
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -171,7 +230,10 @@ export default function Budget(){
 
         <button
         type="button"
-        onClick={() => setShowModal(true)}
+        onClick={() =>  {
+            setMode("create");
+            setShowModal(true);
+        }}
         style={{ marginTop: "0.5rem", color: "#22c55e", background: "none", border: "none", cursor: "pointer" }}
         >
         + Add new category
@@ -216,9 +278,9 @@ export default function Budget(){
                     <td>${b.amount}</td>
                     {!past && 
                         <>
-                         <td>edit</td>
-                         <td>delete</td>
-                         </>
+                         <button onClick={()=> handleEdit(b)}>Edit</button>
+                         <button onClick={()=> handleDelete(b.id)}>Delete</button>
+                        </>
                     }
                     <td></td>
                     </tr>
@@ -232,22 +294,24 @@ export default function Budget(){
     {showModal && (
       <div className="modal-overlay" onClick={(e) => e.stopPropagation()} >
         <div className="modal" >
-          <h4>Add Category</h4>
+          <h4> { mode === "create" ? "Add Category" : "Edit budget"}</h4>
 
           <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="Category name"
+            value={mode === "create" ? newCategory : editBudget.amount || ""}
+            onChange={(e) => mode === "create" ? setNewCategory(e.target.value): setEdit((prev)=>({...prev, amount: e.target.value}))}
+            placeholder= {mode === "create" ? "Category name" : "Limit ($)"}
             autoFocus
+            type= {mode === "create"? "text": "number"}
           />
 
           <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-            <button onClick={handleAddCategory}>Add</button>
+            <button onClick={mode === "create"? handleAddCategory : handleSubmitEdit}>Add</button>
             <button onClick={() => setShowModal(false) }>Cancel</button>
           </div>
         </div>
       </div>
     )}
+    
     </div>
     )
     
