@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from app.db.session import get_db
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
 from app.services.transaction_services import (
@@ -8,7 +7,8 @@ from app.services.transaction_services import (
     create_transaction_service,
     update_transaction_service,
     list_transactions,
-    delete_transaction_service
+    delete_transaction_service,
+    get_spending_by_category
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
@@ -56,3 +56,18 @@ def delete_transaction(
 ):
 
     return delete_transaction_service(transaction_id, current_user.id, db)
+
+
+@router.get("/spendings/")
+def get_spendings(
+    month: int,
+    year: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+
+    results = get_spending_by_category(month, year, current_user.id, db)
+    if results is None:
+        raise HTTPException(status_code=404, detail="Spendings not found")
+    return results
+    

@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from app.models.transaction import Transaction
+from app.models.category import Category
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
-
+from sqlalchemy import func, extract
 def get_transaction_service(
     transaction_id: int,
     current_user: int,
@@ -82,4 +83,36 @@ def delete_transaction_service(
 
 
     
+
+def get_spending_by_category(
+    month: int,
+    year: int,
+    current_user: int,
+    db: Session
+):
+
+    results = (
+        db.query(
+            Category.id,
+            Category.name,
+            func.sum(Transaction.amount).label("total")
+        ).join(Transaction)
+        .filter(
+            Transaction.user_id == current_user,
+            extract("month", Transaction.date) == month,
+            extract("year", Transaction.date) == year,
+            Transaction.type == "Expense"
+        ).group_by(
+            Category.id
+        ).all()
+    )
+
+    return {
+        r.id : {
+            "name": r.name,
+            "spent": float(r.total)
+        }
+        
+        for r in results
+    }
 

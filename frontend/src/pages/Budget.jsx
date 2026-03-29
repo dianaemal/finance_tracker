@@ -27,7 +27,7 @@ export default function Budget(){
         amount: ""
     })
 
-
+    const [sum, setSum] = useState(0)
     //const [selectedCategory, setSelectedCategory] = useState()
     console.log(budget)
     const fetchCategories = ()=>{
@@ -91,9 +91,11 @@ export default function Budget(){
         try{
             const response = await api.post("/budgets/", payload)
             if (response.status === 201){
+               
                 console.log(response.data)
             }
             fetchBudget(viewMonth, viewYear)
+            fetchSum(viewMonth, viewYear)
         }catch (error) {
             console.error("Error creating work experience:", error);
 
@@ -176,6 +178,7 @@ export default function Budget(){
             if (response.status === 201 || response.status === 200){
                 console.log(response.data)
                 fetchBudget(viewMonth, viewYear)
+                fetchSum(viewMonth, viewYear)
                 setShowModal(false)
 
               
@@ -198,19 +201,53 @@ export default function Budget(){
                 api.delete(`/budgets/${id}`)
                 .then((res)=>{
                     if (res.status === 200 || res.status === 204){
+                        fetchSum(viewMonth, viewYear)
                         setBudgetList((prev)=>{
                             return prev.filter((b)=> b.id !== id)
         
                         })
                     }
                 })
+                
             } catch (error) {
                 console.error("Error deleting work experience:", error);
             }
         }
     }
-   
 
+    const fetchSum = async (month, year)=>{
+        try{
+            const res = await api.get(`budgets/sum/?month=${month}&year=${year}`)
+            if (res.status === 200){
+              
+                console.log("SUM RESPONSE:", res.data);
+                setSum(res.data.total_budget)
+                
+            }
+        }catch(err){
+            console.log(err)
+        }
+    }
+    useEffect(()=>{
+        fetchSum(viewMonth, viewYear)
+    }, [viewMonth, viewYear])
+   
+    const fetchSpendings = async (month, year)=>{
+        try{
+            const res = await api.get(`budgets-summary/?month=${month}&year=${year}`)
+            if (res.status === 200){
+              
+                console.log("SUM :", res.data);
+           
+                
+            }
+        }catch(err){
+            console.log(err)
+        }
+    }
+    useEffect(()=>{
+        fetchSpendings(viewMonth, viewYear)
+    }, [viewMonth, viewYear])
     return(
         
         <div style={{display:"flex"}}>
@@ -275,7 +312,7 @@ export default function Budget(){
                 {budgetList.map((b) => (
                     <tr key={b.id}>
                     <td>{b.category.name || b.category?.name}</td>
-                    <td>${b.amount}</td>
+                    <td>${b.amount}/</td>
                     {!past && 
                         <>
                          <button onClick={()=> handleEdit(b)}>Edit</button>
@@ -311,6 +348,7 @@ export default function Budget(){
         </div>
       </div>
     )}
+    <div > Total budget for the month: ${sum}</div>
     
     </div>
     )

@@ -4,7 +4,8 @@ from app.models.budget import Budget
 from app.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
-
+from sqlalchemy import func
+from app.services.transaction_services import get_spending_by_category
 def get_budget_service(
     budget_id: int,
     current_user: int,
@@ -99,4 +100,52 @@ def delete_budget_service(
 
 
     
+def budget_sum(
+    month: int,
+    year: int,
+    current_user: int,
+    db: Session
+):
+    total = (
+        db.query(func.sum(Budget.amount)).filter(
+            Budget.user_id == current_user,
+            Budget.month == month,
+            Budget.year == year
+        ).scalar()
+    )
+    print(total)
+    return  {"total_budget": total or 0}
 
+
+def get_summary(month: int, year: int, current_user: int, db: Session):
+
+    spending_map = get_spending_by_category(month, year, current_user, db)
+    budgets = list_budgets(current_user, db, month, year)
+
+    summary = {}
+
+    for b in budgets:
+
+        spending_entry = spending_map.get(b.category_id, {"name": b.category.name, "spent": 0})
+        spent = spending_entry["spent"]
+
+        summary[b.category_id] = {
+            "category_id": b.category_id,
+            "category": b.category.name,
+            "spent": spent,
+            "budget": float(b.amount),
+            "remaining": float(b.amount) - spent
+        }
+
+    for category_id, entry in spending_map.items():
+
+        if category_id not in summary:
+            summary[category_id] = {
+                "category_id": category_id,
+                "category": entry["name"],
+                "spent": entry["spent"],
+                "budget": 0,
+                "remaining": -entry["spent"]
+            }
+
+    return list(summary.values())

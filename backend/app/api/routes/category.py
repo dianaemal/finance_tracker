@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,  HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -9,6 +9,7 @@ from app.services.category_services import (
     list_categories,
     create_category_service,
     delete_category_service
+    
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User

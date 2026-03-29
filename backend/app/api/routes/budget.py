@@ -8,11 +8,24 @@ from app.services.budget_services import (
     create_budget_service,
     list_budgets,
     update_budget_service,
-    delete_budget_service
+    delete_budget_service,
+    budget_sum,
+    get_summary
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
 router = APIRouter(prefix="/budgets", tags=["Budget"])
+
+
+@router.get("/budgets-summary/")
+def budget_summary(
+    month: int,
+    year: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    return get_summary(month, year, current_user.id, db)
+
 
 @router.post("/", response_model=BudgetResponse, status_code=201)
 def create_budget(
@@ -58,3 +71,17 @@ def delete_budget(
 ):
 
     return delete_budget_service(budget_id, current_user.id, db)
+
+
+@router.get("/sum/")
+def get_sum(
+    month: int,
+    year: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    sum = budget_sum(month, year, current_user.id, db)
+    if sum is None:
+        raise HTTPException(status_code=404, detail="Sum not found")
+    return sum
+
