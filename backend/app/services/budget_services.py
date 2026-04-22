@@ -1,11 +1,13 @@
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timedelta, timezone
 from app.models.budget import Budget
+from app.models.transaction import Transaction
+from app.models.category import Category
 from app.schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
-from sqlalchemy import func
-from app.services.transaction_services import get_spending_by_category
+from sqlalchemy import func, extract
+
 def get_budget_service(
     budget_id: int,
     current_user: int,
@@ -78,14 +80,47 @@ def list_budgets(
    
 ):
 
-    budgets = db.query(Budget).filter(Budget.user_id == current_user)
+    budgets = db.query(Budget).filter(Budget.user_id == current_user, Budget.category_id != 0)
     if month is not None:
         budgets = budgets.filter(Budget.month == month)
     if year is not None:
         budgets = budgets.filter(Budget.year == year)
         
-    
-    return budgets.all()
+
+    budgets = budgets.all()
+
+    # 🔍 DEBUG PRINTS
+    print("\n===== DEBUG: LIST BUDGETS =====")
+    for b in budgets:
+        print({
+            "id": b.id,
+            "category_id": b.category_id,
+            "category_obj": b.category,
+            "category_name": b.category.name if b.category else None,
+            "amount": float(b.amount),
+            "month": b.month,
+            "year": b.year
+        })
+    print("===== END DEBUG =====\n")
+
+    return budgets
+
+
+def get_monthly_budget(
+    month: int,
+    year: int,
+    current_user : int,
+    db: Session
+
+):
+    monthly_budget = db.query(Budget).filter(
+        Budget.user_id == current_user,
+        Budget.category_id == 0,
+        Budget.month == month,
+        Budget.year == year
+    ).first()
+
+    return monthly_budget 
 
 def delete_budget_service(
     budget_id: int,
@@ -99,6 +134,40 @@ def delete_budget_service(
     return {"message": "Budget deleted successfully."}
 
 
+def get_spending_by_category(
+    month: int,
+    year: int,
+    current_user: int,
+    db: Session
+):
+
+    results = (
+        db.query(
+            Category.id,
+            Category.name,
+            func.sum(Transaction.amount).label("total")
+        ).join(Transaction)
+        .filter(
+            Transaction.user_id == current_user,
+            extract("month", Transaction.date) == month,
+            extract("year", Transaction.date) == year,
+            Transaction.type == "Expense"
+        ).group_by(
+            Category.id
+        ).all()
+    )
+
+    return {
+        r.id : {
+            "name": r.name,
+            "spent": float(r.total)
+        }
+        
+        for r in results
+    }
+
+
+
     
 def budget_sum(
     month: int,
@@ -109,6 +178,7 @@ def budget_sum(
     total = (
         db.query(func.sum(Budget.amount)).filter(
             Budget.user_id == current_user,
+            Budget.category_id != 0,
             Budget.month == month,
             Budget.year == year
         ).scalar()
@@ -125,6 +195,7 @@ def get_summary(month: int, year: int, current_user: int, db: Session):
     summary = {}
 
     for b in budgets:
+       
 
         spending_entry = spending_map.get(b.category_id, {"name": b.category.name, "spent": 0})
         spent = spending_entry["spent"]

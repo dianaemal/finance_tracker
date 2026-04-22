@@ -92,19 +92,16 @@ def refersh(request: Request, db: Session = Depends(get_db)):
         )
 
 @router.post("/logout")
-def logout(data: LogoutRequest, db: Session = Depends(get_db)):
+def logout(request: Request, db: Session = Depends(get_db)):
+    refresh_token = request.cookies.get("refresh_token")
 
-    auth_services.logout_user(data.refresh_token, db)
-    """Log out by clearing the access_token cookie."""
-    response = JSONResponse(
-        content={"message": "Logged out successfully"})
-    response.delete_cookie(key="access_token")
-    response.delete_cookie(key="refresh_token")
+    if refresh_token:
+        auth_services.logout_user(refresh_token, db)
+
+    response = JSONResponse(content={"message": "Logged out successfully"})
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
     return response
-
-
-
-
 
 
 

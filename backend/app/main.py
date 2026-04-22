@@ -24,7 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # your frontend
     allow_credentials=True,  # 🍪 REQUIRED for cookies
-    allow_methods=["*"],     # allow POST, GET, OPTIONS
+    allow_methods=["POST", "PUT", "GET", "DELETE"],     # allow POST, GET, OPTIONS
     allow_headers=["*"],
 )
 # create database tables

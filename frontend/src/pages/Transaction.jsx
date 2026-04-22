@@ -25,6 +25,11 @@ export default function Transaction(){
         description: ""
     })
     const [showModal, setModal] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
+    const [isEditError, setEditError] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({})
     const fetchAccounts = async ()=>{
         try{
             const res = await api.get("/accounts/")
@@ -60,6 +65,9 @@ export default function Transaction(){
           ...prev,
           [name]: value.trim()
         }))
+        if (fieldErrors[name]) {
+          setFieldErrors((prev) => ({ ...prev, [name]: "" }))
+        }
 
 
     }
@@ -75,7 +83,18 @@ export default function Transaction(){
     }
 
     const handleClick = async ()=>{
+        const nextErrors = {}
+        if (!transaction.description) nextErrors.description = "Description is required."
+        if (!transaction.date) nextErrors.date = "Date is required."
+        if (!transaction.amount) nextErrors.amount = "Amount is required."
+        if (!transaction.type) nextErrors.type = "Type is required."
+        if (!transaction.account_id) nextErrors.account_id = "Account is required."
+        if (!transaction.category_id) nextErrors.category_id = "Category is required."
+        setFieldErrors(nextErrors)
+        if (Object.keys(nextErrors).length > 0) return
       
+        setSaving(true)
+        setErrorMessage("")
         try{
           const res = await api.post("/transactions/", {
             ...transaction,
@@ -90,11 +109,16 @@ export default function Transaction(){
           }
         }catch(err){
           console.log(err)
+          setErrorMessage("Failed to create transaction.")
+        } finally {
+          setSaving(false)
         }
     }
     console.log(transaction.date + ":15.691Z")
 
     const fetchTransactions = async ()=>{
+        setLoading(true)
+        setErrorMessage("")
         try{
             const res = await api.get("/transactions/")
             if (res.status === 200){
@@ -102,6 +126,9 @@ export default function Transaction(){
             }
         }catch(err){
             console.log(err)
+            setErrorMessage("Failed to load transactions.")
+        } finally {
+            setLoading(false)
         }
     }
     useEffect(()=>{
@@ -114,6 +141,16 @@ export default function Transaction(){
     }
 
     const handleSubmitEdit = async ()=>{
+        if (!editTransaction.description || !editTransaction.amount || !editTransaction.date || !editTransaction.type
+          || !editTransaction.account_id || !editTransaction.type
+        ) {
+          setErrorMessage("All feilds are required.")
+          setEditError(true);
+          return
+        }
+        setSaving(true)
+        setEditError(false)
+        setErrorMessage("")
         try {
             const res = await api.put(`/transactions/${editTransaction.id}`, editTransaction);
         
@@ -123,6 +160,10 @@ export default function Transaction(){
               }
             } catch (err) {
               console.log(err);
+              setErrorMessage("Failed to update transaction.")
+              setEditError(true)
+            } finally {
+              setSaving(false)
             }
     }
 
@@ -139,67 +180,84 @@ export default function Transaction(){
               }
             } catch (err) {
               console.log(err);
+              setErrorMessage("Failed to delete transaction.")
             }
     }
 
     return(
-    <div id="transactions" className="section" style={{ display: "flex" }}>
+    <div id="transactions" className="app-shell">
         <Sidebar />
 
+  <main className="main-area">
   <div className="card">
     <h2>Transactions</h2>
+    {!isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
+   
 
-    {/* 🔹 Add Transaction Form */}
+    {/* Add Transaction Form */}
     <div className="form-card">
       <input
             name="description"
             value={transaction.description}
             onChange={handleChange}
             placeholder="Transaction name/description"
+            required
         />
+      {fieldErrors.description && <p className="field-error">{fieldErrors.description}</p>}
       <input type="datetime-local"
             name="date"
             value = {transaction.date}
             onChange={handleChange}
+            required
       />
+      {fieldErrors.date && <p className="field-error">{fieldErrors.date}</p>}
 
       <input type="number" step="0.01" placeholder="Amount ($)"
               name="amount"
               value = {transaction.amount}
               onChange={handleChange}
+              required
       
       />
+      {fieldErrors.amount && <p className="field-error">{fieldErrors.amount}</p>}
 
       {/* Type */}
-      <select name="type" value={transaction.type} onChange={handleChange}>
-        <option>Select Type</option>
+      <select name="type" value={transaction.type} onChange={handleChange} required>
+        <option value="">Select Type</option>
         <option key="1" value="Income">Income</option>
         <option key="2" value="Expense">Expense</option>
       </select>
+      {fieldErrors.type && <p className="field-error">{fieldErrors.type}</p>}
 
       {/* Account */}
-      <select name="account_id" value={transaction.account_id} onChange={handleChange}>
-        <option>Select Account</option>
+      <select name="account_id" value={transaction.account_id} onChange={handleChange} required>
+        <option value="">Select Account</option>
         {accountsList.map((account)=>(
             <option key={account.id} value={account.id}>{account.name}</option>
         ))}
       </select>
+      {fieldErrors.account_id && <p className="field-error">{fieldErrors.account_id}</p>}
 
       {/* Category */}
-      <select name="category_id" value={transaction.category_id} onChange={handleChange}>
-        <option>Select Category</option>
+      <select name="category_id" value={transaction.category_id} onChange={handleChange} required>
+        <option value="">Select Category</option>
         {categoriesList.map((cat)=>(
             <option key={cat.id} value={cat.id}>{cat.name}</option>
         ))}
       </select>
+      {fieldErrors.category_id && <p className="field-error">{fieldErrors.category_id}</p>}
 
-      <button onClick={handleClick}>Add Transaction</button>
+      <button onClick={handleClick} disabled={saving}>{saving ? "Saving..." : "Add Transaction"}</button>
     </div>
 
-    {/* 🔥 Transactions List */}
-    <h3 style={{ marginTop: "2rem" }}>All Transactions</h3>
+    {/*  Transactions List */}
 
-    <table>
+    <h3 className="card-section-title">All Transactions</h3>
+     {loading && <div className="page-loading"><span className="loading-spinner" />Loading transactions...</div>}
+    {transactionsList.length > 0 ? (
+
+  
+    <table className="data-table">
       <thead>
         <tr>
           <th>Description</th>
@@ -213,6 +271,7 @@ export default function Transaction(){
       </thead>
 
       <tbody>
+        
         {transactionsList.map((transaction)=>(
           <tr key={transaction.id}>
             <td>{transaction.description}</td>
@@ -221,19 +280,24 @@ export default function Transaction(){
             <td>{transaction.type}</td>
             <td>{transaction.account.name}</td>
             <td>{transaction.category.name}</td>
-            <th>
-              <button onClick={() => handleEdit(transaction)}>Edit</button>
-              <button onClick={() => handleDelete(transaction.id)}>Delete</button>
-            </th>
+            <td>
+              <button type="button" onClick={() => handleEdit(transaction)}>Edit</button>
+              <button type="button" onClick={() => handleDelete(transaction.id)}>Delete</button>
+            </td>
           </tr>
         ))}
       </tbody>
-    </table>
-  </div>
-   {/* 🔥 Edit Modal */}
+    </table>  ): (
+          <p className="empty-hint">No transactions yet</p>
+      )}
+      </div>
+   {/* Edit Modal */}
   { showModal && <div className="modal-overlay">
-    <div className="modal">
+    <div className="modal" onClick={(e) => e.stopPropagation()}>
       <h4>Edit Transaction</h4>
+       {isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
+   
+
 
       <div className="form-card">
       <input
@@ -241,30 +305,33 @@ export default function Transaction(){
             value={editTransaction.description || ""}
             onChange={handleEditChange}
             placeholder="Transaction name/description"
+            required
         />
       <input type="datetime-local"
             name="date"
             value = {editTransaction.date || ""}
             onChange={handleEditChange}
+            required
       />
 
       <input type="number" step="0.01" placeholder="Amount ($)"
               name="amount"
               value = {editTransaction.amount || ""}
               onChange={handleEditChange}
+              required
       
       />
 
 
       {/* Type */}
-      <select name="type" value={editTransaction.type} onChange={handleEditChange}>
-        <option>Select Type</option>
+      <select name="type" value={editTransaction.type} onChange={handleEditChange} required>
+        <option value="">Select Type</option>
         <option key="1" value="Income">Income</option>
         <option key="2" value="Expense">Expense</option>
       </select>
 
       {/* Account */}
-      <select name="account_id" value={editTransaction.account_id} onChange={handleEditChange}>
+      <select name="account_id" value={editTransaction.account_id} onChange={handleEditChange} required>
         <option>Select Account</option>
         {accountsList.map((account)=>(
             <option key={account.id} value={account.id}>{account.name}</option>
@@ -272,21 +339,22 @@ export default function Transaction(){
       </select>
 
       {/* Category */}
-      <select name="category_id" value={editTransaction.category_id} onChange={handleEditChange}>
+      <select name="category_id" value={editTransaction.category_id} onChange={handleEditChange} required>
         <option>Select Category</option>
         {categoriesList.map((cat)=>(
             <option key={cat.id} value={cat.id}>{cat.name}</option>
         ))}
       </select>
 
-      <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-        <button onClick = {handleSubmitEdit}>Update</button>
-        <button onClick={()=> setModal(false)}>Cancel</button>
+      <div className="modal-actions">
+      <button type="button" onClick = {handleSubmitEdit} disabled={saving}>{saving ? "Saving..." : "Update"}</button>
+        <button type="button" className="btn-secondary" onClick={() =>{ setModal(false); setErrorMessage("");}} disabled={saving}>Cancel</button>
       </div>
       </div>
   </div>
   </div>
   }
+    </main>
     </div>
     )
 }

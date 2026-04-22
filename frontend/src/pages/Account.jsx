@@ -16,8 +16,13 @@ export default function Accounts() {
     name: "",
     balance: ""
   });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isEditError, setEditError] = useState(false);
 
-  // 🔹 Handle input
+  // Handle input
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -29,11 +34,17 @@ export default function Accounts() {
 
   // 🔹 Fetch accounts
   const fetchAccounts = async () => {
+    setLoading(true);
+    setErrorMessage("");
     try {
       const res = await api.get("/accounts/");
       setAccountList(res.data || []);
+      console.log(res.data)
     } catch (err) {
       console.log(err);
+      setErrorMessage("Failed to load accounts.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,7 +55,14 @@ export default function Accounts() {
   // 🔹 Create account
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nextErrors = {};
+    if (!account.name) nextErrors.name = "Account name is required.";
+    if (account.balance === "") nextErrors.balance = "Balance is required.";
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
+    setSaving(true);
+    setErrorMessage("");
     try {
       const res = await api.post("/accounts/", {
         ...account,
@@ -57,10 +75,13 @@ export default function Accounts() {
       }
     } catch (err) {
       console.log(err);
+      setErrorMessage("Failed to create account.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  // 🔹 Open edit modal
+  //  Open edit modal
   const handleEdit = (acc) => {
     setMode("edit");
     setEditAccount({
@@ -71,8 +92,16 @@ export default function Accounts() {
     setShowModal(true);
   };
 
-  // 🔹 Submit edit
+  //  Submit edit
   const handleSubmitEdit = async () => {
+    if (!editAccount.name || editAccount.balance === "") {
+      setEditError(true);
+      setErrorMessage("Account name and balance are required.");
+      return;
+    }
+    setSaving(true);
+    setEditError(false)
+    setErrorMessage("");
     try {
       const res = await api.put(`/accounts/${editAccount.id}`, {
         name: editAccount.name,
@@ -85,14 +114,20 @@ export default function Accounts() {
       }
     } catch (err) {
       console.log(err);
+      setEditError(true);
+      setErrorMessage("Failed to update account.");
+      
+    } finally {
+      setSaving(false);
     }
   };
 
-  // 🔹 Delete
+  //  Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this account?")) return;
 
     try {
+      setErrorMessage("");
       const res = await api.delete(`/accounts/${id}`);
 
       if (res.status === 200 || res.status === 204) {
@@ -102,45 +137,59 @@ export default function Accounts() {
       }
     } catch (err) {
       console.log(err);
+      setErrorMessage("Failed to delete account.");
     }
   };
-
+  
   return (
-    <div style={{ display: "flex" }}>
+    <div className="app-shell">
       <Sidebar />
 
+      <main className="main-area">
       <div className="card">
         <h4>Add Account</h4>
-
+        {!isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
+      
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <input
               name="name"
               value={account.name}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+              }}
               placeholder="Account Name (e.g. Checking)"
+              required
             />
+            {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
           </div>
 
           <div className="form-group">
             <input
               name="balance"
               value={account.balance}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                if (fieldErrors.balance) setFieldErrors((prev) => ({ ...prev, balance: "" }));
+              }}
               type="number"
               step="0.01"
               placeholder="Balance ($)"
+              required
             />
+            {fieldErrors.balance && <p className="field-error">{fieldErrors.balance}</p>}
           </div>
 
-          <button className="btn">Add Account</button>
+          <button className="btn" disabled={saving}>{saving ? "Saving..." : "Add Account"}</button>
         </form>
 
-        {/* 🔥 Accounts List */}
-        <h4 style={{ marginTop: "2rem" }}>Your Accounts</h4>
+        {/* Accounts List */}
+        <h3 className="card-section-title">Your Accounts</h3>
+        {loading && <div className="page-loading"><span className="loading-spinner" />Loading accounts...</div>}
 
         {accountsList.length > 0 ? (
-          <table>
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -153,7 +202,7 @@ export default function Accounts() {
               {accountsList.map((a) => (
                 <tr key={a.id}>
                   <td>{a.name}</td>
-                  <td>${a.balance}</td>
+                  <td>{a.balance < 0 ? `-$${-(a.balance)}`: `$${a.balance}`}</td>
                   <td>
                     <button onClick={() => handleEdit(a)}>Edit</button>
                     <button onClick={() => handleDelete(a.id)}>Delete</button>
@@ -163,16 +212,16 @@ export default function Accounts() {
             </tbody>
           </table>
         ) : (
-          <p>No accounts yet</p>
+          <p className="empty-hint">No accounts yet</p>
         )}
       </div>
 
-      {/* 🔥 Modal */}
+      {/*  Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h4>Edit Account</h4>
-
+            {isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
             <input
               value={editAccount.name}
               onChange={(e) =>
@@ -182,6 +231,7 @@ export default function Accounts() {
                 }))
               }
               placeholder="Account name"
+              required
             />
 
             <input
@@ -195,15 +245,17 @@ export default function Accounts() {
                 }))
               }
               placeholder="Balance"
+              required
             />
 
-            <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
-              <button onClick={handleSubmitEdit}>Update</button>
-              <button onClick={() => setShowModal(false)}>Cancel</button>
+            <div className="modal-actions">
+              <button type="button" onClick={handleSubmitEdit} disabled={saving}>{saving ? "Saving..." : "Update"}</button>
+              <button type="button" className="btn-secondary" onClick={() =>{ setShowModal(false); setErrorMessage("");}} disabled={saving}>Cancel</button>
             </div>
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

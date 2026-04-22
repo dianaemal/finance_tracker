@@ -29,7 +29,7 @@ class LogoutRequest(BaseModel):
     schemas for logout.
     Used by /logout
     """
-    refresh_token: str
+    refresh_token: str 
 
 class TokenResponse(BaseModel):
     """

@@ -1,6 +1,6 @@
 import api from "../api/axios"
 import { useState } from "react";
-import {useNavigate } from "react-router-dom";
+import {useNavigate, Link } from "react-router-dom";
 
 export default function Register(){
     const navigate = useNavigate()
@@ -12,6 +12,10 @@ export default function Register(){
         re_password: ""
     })
     const [signupData, setData] = useState(SignUpData)
+    const [loading, setLoading] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
+    const [successMessage, setSuccessMessage] = useState("")
+    const [fieldErrors, setFieldErrors] = useState({})
 
     const handleChange = (e)=>{
         const {name, value} = e.target;
@@ -21,33 +25,58 @@ export default function Register(){
         }
 
         ))
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+        }
+        if (errorMessage) setErrorMessage("");
+        if (successMessage) setSuccessMessage("");
     }
     const handleSubmit = async (e)=>{
         e.preventDefault();
+        const nextErrors = {};
+        if (!signupData.email) nextErrors.email = "Email is required.";
+        if (!signupData.username) nextErrors.username = "Username is required.";
+        if (!signupData.password) nextErrors.password = "Password is required.";
+        if (!signupData.re_password) nextErrors.re_password = "Please re-type your password.";
         if (signupData.password !== signupData.re_password){
+            nextErrors.re_password = "Passwords do not match.";
+        }
+        setFieldErrors(nextErrors);
+        if (Object.keys(nextErrors).length > 0) {
             return
         }
+        setLoading(true);
+        setErrorMessage("");
         try{
             await api.post("/auth/register", {
                 email: signupData.email,
                 username: signupData.username,
                 password: signupData.password,
             });
-            alert("Registered successfully!");
-            navigate("/"); // go to login
+            setSuccessMessage("Registered successfully! Redirecting to login...");
+            navigate("/login"); // go to login
         }catch(err){
             console.error(err);
-            alert("Registration failed");
+            if (err.response && err.response.data) {
+                const messages = Object.values(err.response.data).flat().join(" ");
+                setErrorMessage(messages || "Registration failed.");
+            } else {
+                setErrorMessage("Registration failed.");
+            }
+        } finally {
+            setLoading(false);
         }
 
     }
 
 
     return(
-        <div>
-            <h3>Sign Up</h3>
-            <form onSubmit={handleSubmit} >
+        <div className="auth-page">
+            <div className="auth-card">
+            <h3 className="auth-title">SIGN UP</h3>
+            <form className="auth-form" onSubmit={handleSubmit} >
                 <input
+                    className="login-input"
                     placeholder="email"
                     type="email"
                     name="email"
@@ -56,7 +85,9 @@ export default function Register(){
                     onChange= {handleChange}
                 
                 />
+                {fieldErrors.email && <p className="field-error">{fieldErrors.email}</p>}
                 <input
+                    className="login-input"
                     placeholder="Username"
                     type="text"
                     name="username"
@@ -65,7 +96,9 @@ export default function Register(){
                     onChange= {handleChange}
                 
                 />
+                {fieldErrors.username && <p className="field-error">{fieldErrors.username}</p>}
                 <input
+                    className="login-input"
                     placeholder="password"
                     type="password"
                     name="password"
@@ -74,8 +107,10 @@ export default function Register(){
                     onChange= {handleChange}
                 
                 />
+                {fieldErrors.password && <p className="field-error">{fieldErrors.password}</p>}
         
                 <input
+                    className="login-input"
                     placeholder="re-type password"
                     type="password"
                     name="re_password"
@@ -84,11 +119,19 @@ export default function Register(){
                     onChange= {handleChange}
                 
                 />
+                {fieldErrors.re_password && <p className="field-error">{fieldErrors.re_password}</p>}
 
-                 <button className="login-btn" type="submit">Sign Up</button>
+                 {errorMessage && <div className="error-message">{errorMessage}</div>}
+                 {successMessage && <div className="success-message">{successMessage}</div>}
+
+                 <button className="login-btn" type="submit" disabled={loading}>
+                    {loading ? "Signing up..." : "Sign Up"}
+                 </button>
+                  <div className="text">Already have an account? <Link to="/login">Login</Link></div>
         
         
             </form>
+            </div>
 
         </div>
     )

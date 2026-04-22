@@ -28,7 +28,7 @@ class BudgetResponse(BudgetBase):
     """
     model_config = ConfigDict(from_attributes=True)
     id: int
-    category: CategoryResponse
+    category: Optional[CategoryResponse] = None
 
 
 

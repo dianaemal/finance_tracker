@@ -4,7 +4,21 @@ from app.models.account import Account
 from app.schemas.account import AccountResponse, AccountCreate, AccountUpdate
 from app.core.config import settings
 from fastapi import HTTPException, Depends, status
-
+from sqlalchemy import func
+def total_balance(
+    current_user: int,
+    db: Session
+    
+):
+    total = db.query(
+        func.count(Account.id).label("count"),
+        func.sum(Account.balance).label("total")
+        
+    ).filter(Account.user_id == current_user).first()
+    return {
+    "count": total.count,
+    "total": float(total.total or 0)
+    }
 
 def get_account_service(
     account_id: int,

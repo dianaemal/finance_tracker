@@ -87,7 +87,7 @@ def delete_category_service(
     
 # function for adding predefined categories to the database
 def seed_categories(db):
-    predefined = ["Food", "Rent", "Transport", "Entertainment", "Personal", "Insurance", "Health"]
+    predefined = ["Food", "Rent", "Transport", "Entertainment", "Personal", "Insurance", "Health", "Salary"]
 
     for name in predefined:
         exists = db.query(Category).filter(

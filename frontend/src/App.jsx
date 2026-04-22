@@ -6,6 +6,7 @@ import LogIn from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Account';
 import Transaction from './pages/Transaction';
+import Settings from './pages/Settings';
 export default function App (){
   return (
  
@@ -16,6 +17,7 @@ export default function App (){
           <Route path="/budget" element={<Budget/>}/>
           <Route path="/account" element={<Accounts/>}/>
           <Route path="/transaction" element={<Transaction/>}/>
+           <Route path="/user-settings" element={<Settings/>}/>
 
           
       </Routes>

@@ -8,7 +8,8 @@ from app.services.transaction_services import (
     update_transaction_service,
     list_transactions,
     delete_transaction_service,
-    get_spending_by_category
+    income_expense
+
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
@@ -25,11 +26,19 @@ def create_transaction(
 
 @router.get("/", response_model=list[TransactionResponse])
 def get_all_transactions(
+    month: int | None = None,
+    year: int | None = None,
+    account: int | None = None,
+    category: int | None = None,
+    type: str | None = None,
+    offset: int = 0,
+    limit: int = 60,
+    description: str | None = None,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
 
-    return list_transactions(current_user.id, db)
+    return list_transactions( current_user.id, db, offset, limit, month, year, account, category, type,description,)
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(
@@ -58,16 +67,20 @@ def delete_transaction(
     return delete_transaction_service(transaction_id, current_user.id, db)
 
 
-@router.get("/spendings/")
-def get_spendings(
+
+
+
+
+
+@router.get("/income/stats/")
+def get_spending(
     month: int,
     year: int,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
 
-    results = get_spending_by_category(month, year, current_user.id, db)
-    if results is None:
-        raise HTTPException(status_code=404, detail="Spendings not found")
-    return results
+    return income_expense(month, year, current_user.id, db)
+    
+   
     

@@ -8,11 +8,24 @@ from app.services.account_services import (
     list_accounts,
     get_account_service,
     update_account_service,
-    delete_account_service
+    delete_account_service,
+    total_balance
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
 router = APIRouter(prefix="/accounts", tags=["Account"])
+
+@router.get("/balance/total/")
+def get_total(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+
+    total = total_balance(current_user.id, db)
+    if total is None:
+        raise HTTPException(status_code=404, detail="Total not found.")
+    return total
+
 
 @router.post("/", response_model=AccountResponse, status_code=201)
 def create_account(

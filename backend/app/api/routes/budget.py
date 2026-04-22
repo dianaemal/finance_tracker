@@ -10,7 +10,9 @@ from app.services.budget_services import (
     update_budget_service,
     delete_budget_service,
     budget_sum,
-    get_summary
+    get_summary,
+    get_spending_by_category,
+    get_monthly_budget
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
@@ -72,6 +74,18 @@ def delete_budget(
 
     return delete_budget_service(budget_id, current_user.id, db)
 
+@router.get("/spendings/")
+def get_spendings(
+    month: int,
+    year: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+
+    results = get_spending_by_category(month, year, current_user.id, db)
+    if results is None:
+        raise HTTPException(status_code=404, detail="Spendings not found")
+    return results
 
 @router.get("/sum/")
 def get_sum(
@@ -85,3 +99,12 @@ def get_sum(
         raise HTTPException(status_code=404, detail="Sum not found")
     return sum
 
+@router.get("/monthly/")
+def get_monthly(
+    month: int,
+    year: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    return get_monthly_budget(month, year, current_user.id, db)
+    
