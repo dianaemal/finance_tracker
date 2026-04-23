@@ -1,10 +1,11 @@
 pip
 setuptools>=70
 wheel
-fastapi==0.101.1        # FastAPI framework
+fastapi>=0.110        # FastAPI framework
 uvicorn==0.23.2         # ASGI server to run FastAPI
 sqlalchemy==2.0.20      # ORM for database models
-pydantic==1.10.15         # Data validation / schemas
+pydantic>=2.7,<3
+pydantic-settings>=2.0        # Data validation / schemas
 python-dotenv==1.0.1    # Optional, for environment variables
 pydantic_settings
 psycopg2-binary
