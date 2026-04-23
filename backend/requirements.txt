@@ -1,3 +1,6 @@
+pip
+setuptools>=70
+wheel
 fastapi==0.101.1        # FastAPI framework
 uvicorn==0.23.2         # ASGI server to run FastAPI
 sqlalchemy==2.0.20      # ORM for database models
@@ -11,3 +14,4 @@ python-multipart
 alembic
 pydantic[email]
 bcrypt==4.0.1
+PyYAML==6.0.1
