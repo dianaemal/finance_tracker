@@ -16,3 +16,4 @@ alembic
 pydantic[email]
 bcrypt==4.0.1
 PyYAML==6.0.1
+pytz>=2024.1
