@@ -106,13 +106,34 @@ npm start
 
 ---
 
+
 ## Screenshots
 
-| View | Screenshot |
-|------|------------|
-| Dashboard View | ![Dashboard](./screenshots/dashboard.png) |
-| Transactions Page | *Add screenshot here* |
-| Accounts Management | *Add screenshot here* |
+### Dashboard View
+*Main overview showing total balance, monthly income/expenses, and budget tracking*
+![Dashboard Screenshot](./screenshots/dashboard.png)
+
+*List all transactions with filtering by date, category, type, account, and description*
+![Dashboard Screenshot](./screenshots/dashboard2.png)
+
+### Transactions Page
+*List all transactions with pagination*
+
+![Transactions Screenshot](./screenshots/transaction.png)
+
+### Accounts Management
+*Create and manage multiple financial accounts*
+
+![Accounts Screenshot](./screenshots/account.png)
+
+### Budget Tracking
+*Set monthly budgets and monitor spending*
+
+![Budgets Screenshot](./screenshots/budget.png)
+
+---
+
+*Screenshots taken from version 1.0.0*
 
 ---
 
