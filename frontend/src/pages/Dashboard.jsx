@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
 import Sidebar from "../components/Sidebar";
@@ -23,8 +23,11 @@ export default function Dashboard(){
   const [categoriesList, setCategories] = useState([])
   const [summary, setSummary] = useState([])
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
+  const [transactionPage, setTransactionPage] = useState(1);
+  const [transactionTotalPages, setTransactionTotalPages] = useState(1);
+  const [transactionTotal, setTransactionTotal] = useState(0);
 
 
   const [filters, setFilters] = useState({
@@ -83,12 +86,22 @@ export default function Dashboard(){
                   setErrorMessage("Failed to load accounts.");
               }
           }
-    const fetchTransactions = async () => {
+    const fetchTransactions = async (activeFilters = filters) => {
     try {
-      const res = await api.get(
-        `/transactions/`
-      );
-      setTransactions(res.data);
+      const params = {};
+      if (activeFilters.type && activeFilters.type !== "all") params.type = activeFilters.type;
+      if (activeFilters.account) params.account_id = Number(activeFilters.account);
+      if (activeFilters.category) params.category_id = Number(activeFilters.category);
+      if (activeFilters.description?.trim()) params.description = activeFilters.description.trim();
+      if (activeFilters.dateFrom) params.date_from = activeFilters.dateFrom;
+      if (activeFilters.dateTo) params.date_to = activeFilters.dateTo;
+      params.page = transactionPage;
+      params.page_size = 10;
+
+      const res = await api.get(`/transactions/`, { params });
+      setTransactions(res.data.items || []);
+      setTransactionTotalPages(res.data.total_pages || 1);
+      setTransactionTotal(res.data.total || 0);
     } catch (err) {
       console.log(err);
       setErrorMessage("Failed to load transactions.");
@@ -123,7 +136,6 @@ export default function Dashboard(){
         fetchTotal(),
         fetchStats(),
         fetchSummary(),
-        fetchTransactions(),
         fetchAccounts(),
         fetchCategories()
       ]);
@@ -138,43 +150,21 @@ export default function Dashboard(){
   loadData();
   }, []);
 
-
-  const filteredTransactions = useMemo(() => {
-    const typeFilter = (filters.type || "all").toLowerCase();
-    const descFilter = (filters.description || "").trim().toLowerCase();
-    const accountFilter = filters.account ? Number(filters.account) : null;
-    const categoryFilter = filters.category ? Number(filters.category) : null;
-    const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-    const to = filters.dateTo ? new Date(filters.dateTo) : null;
-
-    if (from) from.setHours(0, 0, 0, 0);
-    if (to) to.setHours(23, 59, 59, 999);
-
-    return (transactions || []).filter((t) => {
-      const tType = (t?.type || "").toLowerCase();
-      const tDesc = (t?.description || "").toLowerCase();
-      const tAccountId = t?.account_id ?? t?.account?.id ?? null;
-      const tCategoryId = t?.category_id ?? t?.category?.id ?? null;
-      const tDate = t?.date ? new Date(t.date) : null;
-
-      if (typeFilter !== "all" && typeFilter !== "" && tType !== typeFilter) return false;
-      if (descFilter && !tDesc.includes(descFilter)) return false;
-      if (accountFilter && Number(tAccountId) !== accountFilter) return false;
-      if (categoryFilter && Number(tCategoryId) !== categoryFilter) return false;
-      if (from && (!tDate || tDate <= from)) return false;
-      if (to && (!tDate || tDate >= to)) return false;
-      return true;
-    });
+  useEffect(() => {
+    fetchTransactions(filters);
   }, [
-    transactions,
     filters.type,
-    filters.description,
     filters.account,
     filters.category,
+    filters.description,
     filters.dateFrom,
     filters.dateTo,
+    transactionPage
   ]);
 
+  const filteredTransactions = transactions;
+
+  
   const formatMoney = (price)=>{
     return price.toLocaleString('en-US', {
       style: 'currency',
@@ -494,7 +484,7 @@ const renderStatus = (budgetSum, sumWithBudget, sumWithoutBudget )=>{
         filteredTransactions.map((t) => (
           <tr key={t.id}>
             <td>{t.description}</td>
-            <td>{(t.type || "").toLowerCase()}</td>
+            <td>{(t.type || "")}</td>
             <td>{formatMoney(t.amount)}</td>
             <td>{new Date(t.date).toLocaleDateString()}</td>
           </tr>
@@ -502,6 +492,27 @@ const renderStatus = (budgetSum, sumWithBudget, sumWithoutBudget )=>{
       )}
     </tbody>
   </table>
+  <div className="dashboard-pagination">
+    <span>Page {transactionPage} of {transactionTotalPages} ({transactionTotal} total)</span>
+    <div className="dashboard-pagination-actions">
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={transactionPage <= 1}
+        onClick={() => setTransactionPage((prev) => Math.max(1, prev - 1))}
+      >
+        ◀
+      </button>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={transactionPage >= transactionTotalPages}
+        onClick={() => setTransactionPage((prev) => Math.min(transactionTotalPages, prev + 1))}
+      >
+        ▶
+      </button>
+    </div>
+  </div>
 </div>
         </div>
       </main>

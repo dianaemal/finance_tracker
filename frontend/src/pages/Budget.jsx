@@ -25,7 +25,7 @@ export default function Budget(){
         id: null,
         amount: ""
     })
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
     const [fieldErrors, setFieldErrors] = useState({})
@@ -302,6 +302,7 @@ export default function Budget(){
         <div className="card">
            
       <h4>Create Budget</h4>
+
         { !isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
        
       <form onSubmit={handleSubmit}>

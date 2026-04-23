@@ -25,11 +25,13 @@ export default function Transaction(){
         description: ""
     })
     const [showModal, setModal] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [errorMessage, setErrorMessage] = useState("")
     const [isEditError, setEditError] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({})
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
     const fetchAccounts = async ()=>{
         try{
             const res = await api.get("/accounts/")
@@ -63,7 +65,7 @@ export default function Transaction(){
         
         setTranaction((prev)=>({
           ...prev,
-          [name]: value.trim()
+          [name]: value
         }))
         if (fieldErrors[name]) {
           setFieldErrors((prev) => ({ ...prev, [name]: "" }))
@@ -76,7 +78,7 @@ export default function Transaction(){
         
         setEditTransaction((prev)=>({
           ...prev,
-          [name]: value.trim()
+          [name]: value
         }))
 
 
@@ -101,10 +103,19 @@ export default function Transaction(){
             amount: parseFloat(transaction.amount),
             category_id: Number(transaction.category_id),
             account_id: Number(transaction.account_id),
-            date: new Date(transaction.date).toISOString()
+            date: transaction.date
 
           })
           if (res.status === 201){
+            setPage(1)
+            setTranaction({
+              category_id: "",
+              account_id: "",
+              type: "",
+              date: "",
+              amount: "",
+              description: ""
+            })
             fetchTransactions()
           }
         }catch(err){
@@ -114,7 +125,7 @@ export default function Transaction(){
           setSaving(false)
         }
     }
-    console.log(transaction.date + ":15.691Z")
+    
 
     const fetchTransactions = async ()=>{
         setLoading(true)
@@ -122,7 +133,8 @@ export default function Transaction(){
         try{
             const res = await api.get("/transactions/")
             if (res.status === 200){
-                setTransactionsList(res.data || [])
+                setTransactionsList(res.data.items || [])
+                setTotalPages(res.data.total_pages || 1)
             }
         }catch(err){
             console.log(err)
@@ -133,7 +145,7 @@ export default function Transaction(){
     }
     useEffect(()=>{
         fetchTransactions()
-    }, [])
+    }, [page])
 
     const handleEdit = (transaction)=>{
       setEditTransaction(transaction)
@@ -204,7 +216,7 @@ export default function Transaction(){
             required
         />
       {fieldErrors.description && <p className="field-error">{fieldErrors.description}</p>}
-      <input type="datetime-local"
+      <input type="date"
             name="date"
             value = {transaction.date}
             onChange={handleChange}
@@ -290,6 +302,13 @@ export default function Transaction(){
     </table>  ): (
           <p className="empty-hint">No transactions yet</p>
       )}
+      <div className="dashboard-pagination">
+        <span>Page {page} of {totalPages}</span>
+        <div className="dashboard-pagination-actions">
+          <button type="button" className="btn-secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>  ◀</button>
+          <button type="button" className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>▶</button>
+        </div>
+      </div>
       </div>
    {/* Edit Modal */}
   { showModal && <div className="modal-overlay">
@@ -307,7 +326,7 @@ export default function Transaction(){
             placeholder="Transaction name/description"
             required
         />
-      <input type="datetime-local"
+      <input type="date"
             name="date"
             value = {editTransaction.date || ""}
             onChange={handleEditChange}

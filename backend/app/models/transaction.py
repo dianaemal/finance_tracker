@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Date
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime, timezone
+from datetime import datetime
 class Transaction(Base):
     """
     Attributes:
@@ -18,7 +18,7 @@ class Transaction(Base):
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     type = Column(String(50), nullable=False)  
     amount = Column(Float, nullable=False)
-    date = Column(DateTime(timezone=True), nullable=False)
+    date = Column(Date, nullable=False)
     description = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

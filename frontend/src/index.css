@@ -635,6 +635,20 @@ a.btn {
   font-size: 0.9rem;
   margin: 0.5rem 0 0.85rem;
 }
+.dashboard-pagination {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.dashboard-pagination-actions {
+  display: flex;
+  gap: 0.5rem;
+}
 
 .loading-spinner {
   width: 30px;

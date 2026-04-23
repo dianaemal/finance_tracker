@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import datetime
+# import date as DateType to not get confused with the date filed in the transaction model
+from datetime import date as DateType
 from app.schemas.category import CategoryResponse
 from app.schemas.account import AccountResponse
 
@@ -10,7 +11,7 @@ class TransactionBase(BaseModel):
     account_id: int
     type: str
     amount: float
-    date: datetime
+    date: DateType
     description: Optional[str] = None
 
 
@@ -24,7 +25,7 @@ class TransactionUpdate(BaseModel):
     account_id: Optional[int] = None
     type: Optional[str] = None
     amount: Optional[float] = None
-    date: Optional[datetime] = None
+    date: Optional[DateType] = None
     description: Optional[str] = None
 
 class TransactionResponse(TransactionBase):
@@ -40,3 +41,9 @@ class TransactionResponse(TransactionBase):
 
 
 
+class TransactionListResponse(BaseModel):
+    items: list[TransactionResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

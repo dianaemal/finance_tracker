@@ -16,7 +16,7 @@ export default function Accounts() {
     name: "",
     balance: ""
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -32,7 +32,7 @@ export default function Accounts() {
     }));
   };
 
-  // 🔹 Fetch accounts
+  //  Fetch accounts
   const fetchAccounts = async () => {
     setLoading(true);
     setErrorMessage("");
@@ -52,7 +52,7 @@ export default function Accounts() {
     fetchAccounts();
   }, []);
 
-  // 🔹 Create account
+  //  Create account
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
@@ -148,6 +148,7 @@ export default function Accounts() {
       <main className="main-area">
       <div className="card">
         <h4>Add Account</h4>
+     
         {!isEditError && errorMessage && <div className="error-message">{errorMessage}</div>}
       
         <form onSubmit={handleSubmit}>

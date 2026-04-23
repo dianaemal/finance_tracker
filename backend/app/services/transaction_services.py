@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from app.models.transaction import Transaction
 from app.models.account import Account
 from app.models.category import Category
@@ -69,19 +69,10 @@ def update_transaction_service(
     db: Session
 ):
 
-    print("\n===== UPDATE TRANSACTION START =====")
-
     transaction = get_transaction_service(transaction_id, current_user, db)
 
-    print("Original transaction:", {
-        "id": transaction.id,
-        "type": transaction.type,
-        "amount": float(transaction.amount),
-        "account_id": transaction.account_id
-    })
-
+   
     update_data = data.model_dump(exclude_unset=True)
-    print("Incoming update data:", update_data)
 
     # 1. Store old account BEFORE update
     old_account = db.query(Account).filter(
@@ -123,14 +114,6 @@ def update_transaction_service(
     db.commit()
     db.refresh(transaction)
 
-    print("Final transaction saved:", {
-        "id": transaction.id,
-        "type": transaction.type,
-        "amount": float(transaction.amount)
-    })
-
-    print("===== UPDATE TRANSACTION END =====\n")
-
     return transaction
 
     
@@ -139,41 +122,55 @@ from sqlalchemy import extract
 def list_transactions(
     current_user: int,
     db: Session,
-    offset: int,
-    limit: int,
-    month: int | None = None,
-    year: int | None = None,
-    account: int | None = None,
-    category: int | None = None,
     type: str | None = None,
+    account_id: int | None = None,
+    category_id: int | None = None,
     description: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = 1,
+    page_size: int = 10,
 ):
 
-    query = db.query(Transaction).filter(
+    transactions = db.query(Transaction).filter(
         Transaction.user_id == current_user
     )
+    if type is not None and type.strip():
+        transactions = transactions.filter(func.lower(Transaction.type) == type.strip().lower())
+    if account_id is not None:
+        transactions = transactions.filter(Transaction.account_id == account_id)
+    if category_id is not None:
+        transactions = transactions.filter(Transaction.category_id == category_id)
+    if description is not None and description.strip():
+        transactions = transactions.filter(Transaction.description.ilike(f"%{description.strip()}%"))
+    if date_from is not None:
+        transactions = transactions.filter(Transaction.date >= date_from)
+    if date_to is not None:
+        transactions = transactions.filter(Transaction.date <= date_to)
 
+    total = transactions.count()
+    # make sure that page is always one or greater than one
+    safe_page = max(page, 1)
+    # limit per page is 1 to 100
+    safe_page_size = max(min(page_size, 100), 1)
+    # add limit - 1 to round up correctly
+    total_pages = (total + safe_page_size - 1) // safe_page_size if total > 0 else 1
+    offset = (safe_page - 1) * safe_page_size
+    items = (
+        transactions
+        .order_by(Transaction.date.desc(), Transaction.id.desc())
+        .offset(offset)
+        .limit(safe_page_size)
+        .all()
+    )
+    return {
+        "items": items,
+        "total": total,
+        "page": safe_page,
+        "page_size": safe_page_size,
+        "total_pages": total_pages,
+    }
 
-    if month is not None:
-        query = query.filter(extract("month", Transaction.date) == month)
-
-    if year is not None:
-        query = query.filter(extract("year", Transaction.date) == year)
-
-
-    if account is not None:
-        query = query.filter(Transaction.account_id == account)
-
-    if category is not None:
-        query = query.filter(Transaction.category_id == category)
-
-    if type is not None:
-        query = query.filter(Transaction.type == type)
-
-    if description is not None:
-        query = query.filter(Transaction.description.ilike(f"%{description}%"))
-
-    return query.order_by(Transaction.date.desc()).offset(offset).limit(limit).all()
 
 def delete_transaction_service(
     transaction_id: int,

@@ -19,4 +19,4 @@ class Account(Base):
     user = relationship("User", back_populates="accounts")
 
     #Relationship: Account -> Transaction (one-to-many)
-    transactions = relationship("Transaction", back_populates="account")
+    transactions = relationship("Transaction", back_populates="account", cascade="all, delete-orphan")

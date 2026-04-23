@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
+from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse
 from app.services.transaction_services import (
     get_transaction_service,
     create_transaction_service,
@@ -13,6 +13,7 @@ from app.services.transaction_services import (
 )
 from app.core.dependencies import get_current_active_user
 from app.models.user import User
+from datetime import date
 router = APIRouter(prefix="/transactions", tags=["Transaction"])
 
 @router.post("/", response_model=TransactionResponse, status_code=201)
@@ -24,21 +25,31 @@ def create_transaction(
 
     return create_transaction_service(data, current_user.id, db)
 
-@router.get("/", response_model=list[TransactionResponse])
+@router.get("/", response_model=TransactionListResponse)
 def get_all_transactions(
-    month: int | None = None,
-    year: int | None = None,
-    account: int | None = None,
-    category: int | None = None,
     type: str | None = None,
-    offset: int = 0,
-    limit: int = 60,
+    account_id: int | None = None,
+    category_id: int | None = None,
     description: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = 1,
+    page_size: int = 10,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-
-    return list_transactions( current_user.id, db, offset, limit, month, year, account, category, type,description,)
+    return list_transactions(
+        current_user.id,
+        db,
+        type=type,
+        account_id=account_id,
+        category_id=category_id,
+        description=description,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        page_size=page_size,
+    )
 
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(
@@ -65,12 +76,6 @@ def delete_transaction(
 ):
 
     return delete_transaction_service(transaction_id, current_user.id, db)
-
-
-
-
-
-
 
 @router.get("/income/stats/")
 def get_spending(
