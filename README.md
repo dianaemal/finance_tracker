@@ -1,5 +1,4 @@
 
-```markdown
 # Personal Finance Tracker
 
 ## Project Summary

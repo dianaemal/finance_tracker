@@ -1,9 +1,5 @@
 
----
 
-# DESIGN.md
-
-```markdown
 # Design Document
 
 ## Domain and Motivation
