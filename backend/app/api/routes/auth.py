@@ -39,16 +39,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         key="access_token",
         value=tokens.access_token,
         httponly=True,
-        secure=False,      # True in production
-        samesite="lax",
+        secure=True,      # True in production
+        samesite="none",     #  required for cross-site (Vercel ↔ Render)
         max_age=30 * 6
     )
     response.set_cookie(
         key="refresh_token",
         value=tokens.refresh_token,
         httponly=True,
-        secure=False,     
-        samesite="lax",
+        secure=True,     
+        samesite="none",
         
     )
     return response
@@ -70,16 +70,16 @@ def refersh(request: Request, db: Session = Depends(get_db)):
             key="access_token",
             value=tokens.access_token,
             httponly=True,
-            secure=False,      # True in production
-            samesite="lax",
+            secure=True,      # True in production
+            samesite="none",
             max_age=30 * 6
         )
         response.set_cookie(
             key="refresh_token",
             value=tokens.refresh_token,
             httponly=True,
-            secure=False,     
-            samesite="lax",
+            secure=True,     
+            samesite="none",
             
         )
         return response
