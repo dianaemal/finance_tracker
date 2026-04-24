@@ -15,9 +15,14 @@ export default function Sidebar(){
         setLogoutLoading(true);
         setLogoutError("");
         try {
-            await api.post("/auth/logout", {});
+            const refreshToken = localStorage.getItem("refresh_token");
+            if (refreshToken) {
+                await api.post("/auth/logout", { refresh_token: refreshToken });
+            }
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
             navigate("/login");
-        } catch (err) {
+        } catch {
             setLogoutError("Could not log out. Please try again.");
         } finally {
             setLogoutLoading(false);

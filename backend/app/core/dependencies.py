@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -32,7 +32,7 @@ def decode_token(token: str) -> Optional[str]:
         return None
 
 def get_current_user(
-    request: Request,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
     """
@@ -50,11 +50,7 @@ def get_current_user(
             return {"message": f"Hello, {user.email}"}
     """
 
-    #decode the token:
-    token = request.cookies.get("access_token")
-    if token is None:
-        print(token)
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    # Decode token from Authorization header (Bearer <token>)
     user_id = decode_token(token)
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token.")

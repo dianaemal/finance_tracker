@@ -1,5 +1,4 @@
 import api from "../api/axios"
-import react, { useContext } from 'react';
 import { useState } from "react";
 import {useNavigate,  Link } from "react-router-dom";
 
@@ -39,7 +38,8 @@ export default function LogIn(){
                 password: loginData.password
             })
             if (res.status === 200 ){
-                // cookies are set automatically
+                localStorage.setItem("access_token", res.data.access_token);
+                localStorage.setItem("refresh_token", res.data.refresh_token);
                 navigate("/dashboard");
             }
             
