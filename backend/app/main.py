@@ -22,7 +22,7 @@ def startup_event():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://finance-tracker-black-xi.vercel.app"], 
     allow_credentials=True,  
     allow_methods=["POST", "PUT", "GET", "DELETE"],     
     allow_headers=["Content-Type"],
